@@ -48,17 +48,14 @@ let processLineSmart (line: string) =
                     |}
                 ]
                 |> List.filter (fun w -> w.Position > -1)
-                |> List.sortBy (fun w -> w.Position)
+                |> List.sortBy _.Position
 
             match matchingWords with
             | [] -> []
             | matchingWords -> [ List.head matchingWords; List.last matchingWords ])
         |> List.distinct
 
-    let combined =
-        digits @ words
-        |> List.sortBy (fun r -> r.Position)
-        |> List.map (fun r -> r.Value)
+    let combined = digits @ words |> List.sortBy _.Position |> List.map _.Value
 
     $"{List.head combined}{List.last combined}" |> Convert.ToInt32
 
