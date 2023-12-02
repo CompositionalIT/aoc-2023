@@ -27,19 +27,26 @@ let processLineSmart (line: string) =
         line
         |> Seq.indexed
         |> Seq.filter (snd >> Char.IsDigit)
-        |> Seq.map (fun (pos, c) ->
-            {| Position = pos
-               Value = Char.GetNumericValue c |> int |})
+        |> Seq.map (fun (pos, c) -> {|
+            Position = pos
+            Value = Char.GetNumericValue c |> int
+        |})
         |> Seq.toList
 
     let words =
         words
         |> List.collect (fun word ->
             let matchingWords =
-                [ {| Value = word.Value
-                     Position = line.IndexOf word.Text |}
-                  {| Value = word.Value
-                     Position = line.LastIndexOf word.Text |} ]
+                [
+                    {|
+                        Value = word.Value
+                        Position = line.IndexOf word.Text
+                    |}
+                    {|
+                        Value = word.Value
+                        Position = line.LastIndexOf word.Text
+                    |}
+                ]
                 |> List.filter (fun w -> w.Position > -1)
                 |> List.sortBy (fun w -> w.Position)
 

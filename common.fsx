@@ -17,7 +17,7 @@ type String with
 
 type Files() =
     member _.Item
-        with get file = System.IO.File.ReadLines $"data/{file}.txt"
+        with get file = System.IO.File.ReadAllLines $"data/{file}.txt"
 
 /// Provides access to data files using an indexer e.g. Files.[1] gets the path to the Day One data file.
 let Files = Files()
