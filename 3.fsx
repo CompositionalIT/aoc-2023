@@ -11,12 +11,10 @@ type Symbol = {
     Position: SymbolPosition
 }
 
+type Number = { Value: int; Position: NumberPosition }
+
 type Element =
-    | Number of
-        {|
-            Value: int
-            Position: NumberPosition
-        |}
+    | Number of Number
     | Symbol of Symbol
 
 let parse rows =
@@ -27,14 +25,14 @@ let parse rows =
         |> Seq.map (fun r ->
             match Int32.TryParse r.Value with
             | true, number ->
-                Number {|
+                Number {
                     Value = number
                     Position = {
                         Y = index
                         StartX = r.Index
                         EndX = r.Index + r.Length - 1
                     }
-                |}
+                }
             | false, _ ->
                 Symbol {
                     Value = r.Value[0]
@@ -86,20 +84,11 @@ let file = Files[3] |> parse
 file |> calculatePartNumbersTotal
 
 // Part 2
-let (|GearSymbol|_|) c =
-    if c = '*' then Some GearSymbol else None
+let (|Adjacent|) (numbers: Number list) (position: SymbolPosition) =
+    let adjacents =
+        numbers |> List.filter (fun n -> position |> isAdjacentTo n.Position)
 
-let (|TwoAdjacentNumbers|_|)
-    (numbers:
-        {|
-            Position: NumberPosition
-            Value: int
-        |} list)
-    (position: SymbolPosition)
-    =
-    match numbers |> List.filter (fun n -> position |> isAdjacentTo n.Position) with
-    | [ a; b ] -> Some(TwoAdjacentNumbers(a, b))
-    | _ -> None
+    Adjacent adjacents
 
 let calculateGearRatio elements =
     let numbers, symbols = split elements
@@ -108,8 +97,8 @@ let calculateGearRatio elements =
     |> List.sumBy (fun symbol ->
         match symbol with
         | {
-              Value = GearSymbol
-              Position = TwoAdjacentNumbers numbers (a, b)
+              Value = '*'
+              Position = Adjacent numbers [ a; b ]
           } -> a.Value * b.Value
         | _ -> 0)
 
