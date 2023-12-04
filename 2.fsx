@@ -32,7 +32,7 @@ let getGameMaximums (game: Game) = {|
             |> List.groupBy _.Color
             |> List.map (fun (color, draws) -> {|
                 Color = color
-                MaxCount = draws |> List.maxBy _.Count |> _.Count
+                MaxCount = draws |> List.map _.Count |> List.max
             |})
 |}
 
