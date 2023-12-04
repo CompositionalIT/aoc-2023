@@ -12,6 +12,16 @@ type Symbol = {
     Position: SymbolPosition
 }
 
+let (|Number|_|) (s: string) =
+    match Int32.TryParse s with
+    | true, number -> Some number
+    | false, _ -> None
+
+let (|Char|_|) (s: string) =
+    match s.Length with
+    | 1 -> Some s[0]
+    | _ -> None
+
 let parse rows =
     rows
     |> Array.indexed
@@ -24,26 +34,27 @@ let parse rows =
         |})
         |> Seq.toArray)
     |> Array.toList
-    |> List.partitionMap (fun r ->
-        match Int32.TryParse r.Value with
-        | true, number ->
+    |> List.partitionMap (fun row ->
+        match row.Value with
+        | Number n ->
             Choice1Of2(
                 {
-                    Number.Value = number
+                    Number.Value = n
                     Position = {
-                        Y = r.Y
-                        StartX = r.X
-                        EndX = r.X + r.Value.Length - 1
+                        Y = row.Y
+                        StartX = row.X
+                        EndX = row.X + row.Value.Length - 1
                     }
                 }
             )
-        | false, _ ->
+        | Char symbol ->
             Choice2Of2(
                 {
-                    Symbol.Value = r.Value[0]
-                    Position = { X = r.X; Y = r.Y }
+                    Value = symbol
+                    Position = { X = row.X; Y = row.Y }
                 }
-            ))
+            )
+        | _ -> failwith "Invalid input")
 
 let isAdjacentTo n s =
     let left = abs (n.StartX - s.X) <= 1
