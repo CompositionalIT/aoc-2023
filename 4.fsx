@@ -2,7 +2,7 @@
 open System
 
 let (|Split|) (on: char) (s: string) =
-    s.Split(on, StringSplitOptions.RemoveEmptyEntries ||| StringSplitOptions.RemoveEmptyEntries)
+    s.Split(on, StringSplitOptions.RemoveEmptyEntries ||| StringSplitOptions.TrimEntries)
     |> Array.toList
 
 let (|Int|_|) (s: string) =
@@ -18,8 +18,8 @@ type Card = {
 
     member this.WinningNumbers = (Set.intersect this.Ticket this.Winning).Count
 
-let parse s =
-    match s with
+let parse line =
+    match line with
     | Split ':' [ Split ' ' [ _; Int card ]; Split '|' [ Split ' ' winning; Split ' ' ticket ] ] ->
         let winning = winning |> List.map int |> Set
         let ticket = ticket |> List.map int |> Set
@@ -29,7 +29,7 @@ let parse s =
             Winning = winning
             Ticket = ticket
         }
-    | _ -> failwith $"bad input '{s}'"
+    | _ -> failwith $"bad input '{line}'"
 
 let ticketScore (card: Card) =
     Math.Pow(2, float (card.WinningNumbers - 1)) |> int
