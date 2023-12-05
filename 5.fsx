@@ -153,10 +153,8 @@ let getLowestLocationRanged almanac =
 
     let seeds =
         almanac.Seeds
-        |> List.pairwise
-        |> List.indexed
-        |> List.filter (fun (index, _) -> index % 2 = 0)
-        |> List.map snd
+        |> List.chunkBySize 2
+        |> List.map (fun chunks -> chunks[0], chunks[1])
 
     let rec findSmallest smallest current max =
         if current > max then
@@ -169,4 +167,4 @@ let getLowestLocationRanged almanac =
     |> Array.Parallel.map (fun (seed, range) -> findSmallest UInt64.MaxValue seed (seed + range))
     |> Array.min
 
-getLowestLocationRanged parsedFile
+getLowestLocationRanged parsedSample
