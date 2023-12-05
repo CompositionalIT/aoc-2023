@@ -7,7 +7,7 @@ open type System.Environment
 type String with
 
     member this.ByNewLine() =
-        this.Split([| NewLine; "\n" |], StringSplitOptions.RemoveEmptyEntries)
+        this.Split([| NewLine; "\n" |], StringSplitOptions.None)
 
     /// This reusable function takes a multiline string and groups up based on whenever an empty line occurs.
     member this.GroupByEmptyLine() =
@@ -33,3 +33,17 @@ module List =
                 | Choice2Of2 y -> loop (acc1, y :: acc2) xs
 
         loop ([], [])
+
+let (|Split|) (on: char) (s: string) =
+    s.Split(on, StringSplitOptions.RemoveEmptyEntries ||| StringSplitOptions.TrimEntries)
+    |> Array.toList
+
+let (|Int|_|) (s: string) =
+    match Int32.TryParse s with
+    | true, n -> Some(Int n)
+    | false, _ -> None
+
+let (|UInt64|_|) (s: string) =
+    match UInt64.TryParse s with
+    | true, n -> Some(UInt64 n)
+    | false, _ -> None

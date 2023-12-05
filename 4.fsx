@@ -1,15 +1,6 @@
 #load "common.fsx"
 open System
 
-let (|Split|) (on: char) (s: string) =
-    s.Split(on, StringSplitOptions.RemoveEmptyEntries ||| StringSplitOptions.TrimEntries)
-    |> Array.toList
-
-let (|Int|_|) (s: string) =
-    match Int32.TryParse s with
-    | true, n -> Some(Int n)
-    | false, _ -> None
-
 type Card = {
     Id: int
     Winning: int Set
