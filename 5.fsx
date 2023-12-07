@@ -168,3 +168,4 @@ let getLowestLocationRanged almanac =
     |> Array.min
 
 getLowestLocationRanged parsedSample
+getLowestLocationRanged parsedFile
