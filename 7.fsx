@@ -1,5 +1,4 @@
 #load "common.fsx"
-open System
 
 type Card =
     | A = 14
@@ -20,6 +19,9 @@ type Classification =
     | HighCard = 0
 
 module Card =
+    let MIN_VALUE = 2
+    let MAX_VALUE = int Card.A
+
     let jokerComparer a b =
         match a, b with
         | Card.J, Card.J -> 0
@@ -159,7 +161,7 @@ module JokerLine =
 
         [
             for index in jokers do
-                [ 2..14 ] |> List.map (fun c -> index, enum<Card> c)
+                [ Card.MIN_VALUE .. Card.MAX_VALUE ] |> List.map (fun c -> index, enum<Card> c)
         ]
         |> crossJoin
         |> List.map (fun mods ->
