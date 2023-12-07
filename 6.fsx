@@ -40,8 +40,9 @@ let processTime
         for buttonTime in 1UL .. (uint64 time.Duration - 1UL) do
             let speed = buttonTime * 1UL<Mm / Ms>
             let buttonTime = buttonTime * 1UL<Ms>
+            let distanceTravelled = (time.Duration - buttonTime) * speed
 
-            if ((time.Duration - buttonTime) * speed) > time.Distance then
+            if distanceTravelled > time.Distance then
                 buttonTime
     ]
     |> List.length
@@ -63,8 +64,8 @@ parsedSample |> partOne
 parsedData |> partOne
 
 // Part 2
-let part2Parser = parse (List.reduce (+) >> uint64 >> List.singleton)
-let parsedSamplePart2 = sample.ByNewLine() |> part2Parser |> List.head
-let parsedFilePart2 = Files[6] |> part2Parser |> List.head
+let part2Parser = parse (List.reduce (+) >> uint64 >> List.singleton) >> List.head
+let parsedSamplePart2 = sample.ByNewLine() |> part2Parser
+let parsedFilePart2 = Files[6] |> part2Parser
 processTime parsedSamplePart2
 processTime parsedFilePart2
