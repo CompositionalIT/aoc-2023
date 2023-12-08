@@ -19,21 +19,16 @@ type Classification =
     | HighCard = 0
 
 module Card =
-    let MIN_VALUE = 2
-    let MAX_VALUE = int Card.A
+    let MIN_VALUE, MAX_VALUE = 2, int Card.A
 
     let jokerComparer a b =
         match a, b with
         | Card.J, Card.J -> 0
         | Card.J, _ -> -1
         | _, Card.J -> 1
-        | _, _ -> compare a b
+        | a, b -> compare a b
 
 module Hand =
-    type ComparisonMode =
-        | NormalComparer
-        | JokerComparer
-
     let classify hand =
         match hand |> List.countBy id |> List.map snd |> List.sortDescending with
         | 5 :: _ -> Classification.FiveOfAKind
@@ -45,19 +40,17 @@ module Hand =
         | 1 :: _ -> Classification.HighCard
         | _ -> failwith "Invalid hand"
 
-    let (|Equal|Unequal|) =
+    let private (|Equal|Unequal|) =
         function
         | 0 -> Equal
         | x -> Unequal x
 
-    let compare comparisonMode (h1: Hand) h2 =
-        match compare (classify h1) (classify h2) with
+    let compare comparer (c1: Hand) c2 (h1: Hand) h2 =
+        // simulated
+        match compare (classify c1) (classify c2) with
         | Equal ->
             List.zip h1 h2
-            |> List.map (fun (a, b) ->
-                match comparisonMode with
-                | NormalComparer -> compare a b
-                | JokerComparer -> Card.jokerComparer a b)
+            |> List.map (fun (a, b) -> comparer a b)
             |> List.tryFind ((<>) 0)
             |> Option.defaultValue 0
         | Unequal x -> x
@@ -65,7 +58,8 @@ module Hand =
 type Line = { Hand: Hand; Bid: int }
 
 module Line =
-    let compare mode a b = Hand.compare mode a.Hand b.Hand
+    let compare a b =
+        Hand.compare compare a.Hand b.Hand a.Hand b.Hand
 
 let (|Chars|) (s: string) = s.ToCharArray() |> Array.toList
 
@@ -97,47 +91,39 @@ QQQJA 483"""
 let parsedSample = sample.ByNewLine() |> Array.map parse
 let parsedFile = Files[7] |> Array.map parse
 
-// Part 1
-let calculateWinnings lines =
+let calculateWinnings comparer getBid lines =
     lines
-    |> Array.sortWith (Line.compare Hand.NormalComparer)
+    |> Array.sortWith comparer
     |> Array.indexed
-    |> Array.map (fun (i, l) -> i + 1, l)
-    |> Array.sumBy (fun (rank, line) -> rank * line.Bid)
+    |> Array.sumBy (fun (rank, line) -> (rank + 1) * getBid line)
 
-parsedSample |> calculateWinnings
-parsedFile |> calculateWinnings
+// Part 1
+let calculateWinningsPart1 = calculateWinnings Line.compare _.Bid
+
+parsedSample |> calculateWinningsPart1
+parsedFile |> calculateWinningsPart1
 
 // Part 2
 type JokerLine = {
     Actual: Hand
     Simulated: Hand
     Bid: int
-} with
+}
 
-    static member OfLine(l: Line) = {
+module JokerLine =
+    let private basicJokerComparer getter a b =
+        Hand.compare Card.jokerComparer a.Simulated b.Simulated (getter a) (getter b)
+
+    let compareHybrid = basicJokerComparer _.Actual
+    let compareSimulated = basicJokerComparer _.Simulated
+
+    let ofLine (l: Line) = {
         Actual = l.Hand
         Simulated = l.Hand
         Bid = l.Bid
     }
 
-module JokerLine =
-    let compare (j1: JokerLine) (j2: JokerLine) =
-        match compare (Hand.classify j1.Simulated) (Hand.classify j2.Simulated) with
-        | Hand.Equal ->
-            List.zip j1.Actual j2.Actual
-            |> List.map (fun (a, b) -> Card.jokerComparer a b)
-            |> List.tryFind ((<>) 0)
-            |> Option.defaultValue 0
-        | Hand.Unequal x -> x
-
-    let compareSimulated a b =
-        Hand.compare Hand.JokerComparer a.Simulated b.Simulated
-
-    let compareActual a b =
-        Hand.compare Hand.NormalComparer a.Actual b.Actual
-
-    let crossJoin xss =
+    let private crossJoin xss =
         let rec outerListLoop acc xs =
             match xs with
             | [] -> acc
@@ -155,31 +141,31 @@ module JokerLine =
         let xss' = xss |> List.filter (fun xs -> List.length xs > 0)
         outerListLoop [ [] ] xss'
 
-    let findBestJoker joker =
-        let jokers =
-            joker.Actual |> List.indexed |> List.filter (snd >> (=) Card.J) |> List.map fst
+    let findBestJoker jokerLine =
+        let jokerIndices =
+            jokerLine.Actual
+            |> List.indexed
+            |> List.filter (snd >> (=) Card.J)
+            |> List.map fst
 
         [
-            for index in jokers do
+            for index in jokerIndices do
                 [ Card.MIN_VALUE .. Card.MAX_VALUE ] |> List.map (fun c -> index, enum<Card> c)
         ]
         |> crossJoin
-        |> List.map (fun mods ->
-            (joker, mods)
-            ||> List.fold (fun line (index, card) -> {
-                line with
-                    Simulated = line.Simulated |> List.updateAt index card
+        |> List.map (fun simulation ->
+            (jokerLine, simulation)
+            ||> List.fold (fun jokerLine (index, card) -> {
+                jokerLine with
+                    Simulated = jokerLine.Simulated |> List.updateAt index card
             }))
         |> List.sortWith compareSimulated
         |> List.last
 
-let calculateWinningsJokers lines =
+let calculateWinningsPart2 lines =
     lines
-    |> Array.Parallel.map (JokerLine.OfLine >> JokerLine.findBestJoker)
-    |> Array.sortWith JokerLine.compare
-    |> Array.indexed
-    |> Array.Parallel.map (fun (i, l) -> i + 1, l)
-    |> Array.sumBy (fun (rank, line) -> rank * line.Bid)
+    |> Array.Parallel.map (JokerLine.ofLine >> JokerLine.findBestJoker)
+    |> calculateWinnings JokerLine.compareHybrid _.Bid
 
-parsedSample |> calculateWinningsJokers
-parsedFile |> calculateWinningsJokers
+parsedSample |> calculateWinningsPart2
+parsedFile |> calculateWinningsPart2
