@@ -47,3 +47,5 @@ let (|UInt64|_|) (s: string) =
     match UInt64.TryParse s with
     | true, n -> Some(UInt64 n)
     | false, _ -> None
+
+let (|Chars|) (s: string) = s.ToCharArray() |> Array.toList

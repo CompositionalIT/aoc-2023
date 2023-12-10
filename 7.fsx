@@ -61,8 +61,6 @@ module Line =
     let compare a b =
         Hand.compare compare a.Hand b.Hand a.Hand b.Hand
 
-let (|Chars|) (s: string) = s.ToCharArray() |> Array.toList
-
 let (|ACard|_|) (c: char) =
     match string c with
     | "A" -> Some(Card.A)
